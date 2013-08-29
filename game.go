@@ -1,14 +1,22 @@
-package main
-
-import "fmt"
+package quarto
 
 type Game struct {
   Board  Board
   Stash  Stash
 }
 
-func (g *Game) IsWinning(pos Position) bool {
-  return g.Board.IsWinning(pos)
+func (g *Game) IsWinningAt(pos Position) bool {
+  return g.Board.IsWinningAt(pos)
+}
+
+func (g *Game) IsWinning() bool {
+  return g.Board.IsWinningAt(Position{0, 0}) ||
+         g.Board.IsWinningAt(Position{0, 1}) ||
+         g.Board.IsWinningAt(Position{0, 2}) ||
+         g.Board.IsWinningAt(Position{0, 3}) ||
+         g.Board.IsWinningAt(Position{1, 0}) ||
+         g.Board.IsWinningAt(Position{2, 0}) ||
+         g.Board.IsWinningAt(Position{3, 0})
 }
 
 func (g *Game) PossibleMoves(pieceIndex uint8) []Move {
@@ -32,65 +40,30 @@ func (g *Game) PossibleMoves(pieceIndex uint8) []Move {
   return moves
 }
 
-func (g *Game) PlayWith(pieceIndex uint8) Move {
-  fmt.Printf("Stash: ")
-  for _, p := range g.Stash { fmt.Printf("%3d ; ", p) }
-  fmt.Printf("\n")
-
+func (g *Game) PlayWith(pieceIndex uint8) (Move, bool) {
   moves := g.PossibleMoves(pieceIndex)
+
+  // If there is a wining move, play it
+  for _, move := range moves {
+    game := move.ApplyTo(pieceIndex, *g)
+
+    if game.IsWinningAt(move.Pos) {
+      return move, true
+    }
+  }
 
 MyMoves:
   for _, move := range moves {
     game := move.ApplyTo(pieceIndex, *g)
-    opponent_moves := game.PossibleMoves(move.Idx)
 
-    for _, opponent_move := range opponent_moves {
-      opponent_game := opponent_move.ApplyTo(move.Idx, game)
-      if opponent_game.IsWinning(move.Pos) { continue MyMoves }
+    opponentMoves := game.PossibleMoves(move.Idx)
+    for _, opponentMove := range opponentMoves {
+      opponentGame := opponentMove.ApplyTo(move.Idx, game)
+      if opponentGame.IsWinningAt(opponentMove.Pos) { continue MyMoves }
     }
 
-    return move
+    return move, false
   }
 
-  return moves[0]
-}
-
-func main() {
-  game := Game{Stash: MakeFullStash()}
-
-  move := game.PlayWith(0)
-  game  = move.ApplyTo(0, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", move.Pos.i, move.Pos.j, move.Idx)
-
-  o_move := game.PlayWith(move.Idx)
-  game    = o_move.ApplyTo(move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", o_move.Pos.i, o_move.Pos.j, o_move.Idx)
-
-  move  = game.PlayWith(o_move.Idx)
-  game  = move.ApplyTo(o_move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", move.Pos.i, move.Pos.j, move.Idx)
-
-  o_move = game.PlayWith(move.Idx)
-  game   = o_move.ApplyTo(move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", o_move.Pos.i, o_move.Pos.j, o_move.Idx)
-
-  move  = game.PlayWith(o_move.Idx)
-  game  = move.ApplyTo(o_move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", move.Pos.i, move.Pos.j, move.Idx)
-
-  o_move = game.PlayWith(move.Idx)
-  game   = o_move.ApplyTo(move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", o_move.Pos.i, o_move.Pos.j, o_move.Idx)
-
-  move  = game.PlayWith(o_move.Idx)
-  game  = move.ApplyTo(o_move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", move.Pos.i, move.Pos.j, move.Idx)
-
-  o_move = game.PlayWith(move.Idx)
-  game   = o_move.ApplyTo(move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", o_move.Pos.i, o_move.Pos.j, o_move.Idx)
-
-  move  = game.PlayWith(o_move.Idx)
-  game  = move.ApplyTo(o_move.Idx, game)
-  fmt.Printf("Play at (%d, %d), give #%d\n", move.Pos.i, move.Pos.j, move.Idx)
+  return moves[0], false
 }

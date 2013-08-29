@@ -1,4 +1,4 @@
-package main
+package quarto
 
 type Stash [16]Piece
 

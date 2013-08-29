@@ -1,4 +1,4 @@
-package main
+package quarto
 
 type Piece uint8
 
