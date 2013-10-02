@@ -20,17 +20,23 @@ func (g *Game) IsWinning() bool {
 }
 
 func (g *Game) PossibleMoves(pieceIndex uint8) []Move {
+  var moves []Move
   count := int(g.Board.EmptyCellCount()) * (int(g.Stash.PieceCount()) - 1)
-  moves := make([]Move, count)
 
-  var i, j, k, n uint8
-  for k = 0; k < 16; k++ {
-    if g.Stash[k] != PIECE_EMPTY && k != pieceIndex {
-      for i = 0; i < 4; i++ {
-        for j = 0; j < 4; j++ {
-          if g.Board[i][j] == PIECE_EMPTY {
-            moves[n] = Move{Position{i, j}, k}
-            n++
+  if count == 0 {
+    moves = make([]Move, 1)
+    moves[0] = Move{g.Board.firstEmptyCellPosition(), 0}
+  } else {
+    moves = make([]Move, count)
+    var i, j, k, n uint8
+    for k = 0; k < 16; k++ {
+      if g.Stash[k] != PIECE_EMPTY && k != pieceIndex {
+        for i = 0; i < 4; i++ {
+          for j = 0; j < 4; j++ {
+            if g.Board[i][j] == PIECE_EMPTY {
+              moves[n] = Move{Position{i, j}, k}
+              n++
+            }
           }
         }
       }
@@ -51,6 +57,9 @@ func (g *Game) PlayWith(pieceIndex uint8) (Move, bool) {
       return move, true
     }
   }
+
+  // Finding the better between one is easy...
+  if len(moves) == 1 { return moves[0], false }
 
 MyMoves:
   for _, move := range moves {

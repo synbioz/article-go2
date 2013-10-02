@@ -40,3 +40,15 @@ func (b *Board) EmptyCellCount() (c uint8) {
   }
   return
 }
+
+func (b* Board) firstEmptyCellPosition() Position {
+  for i := 0; i < 4; i++ {
+    for j := 0; j < 4; j++ {
+      if b[i][j] == PIECE_EMPTY {
+        return Position{uint8(i), uint8(j)}
+      }
+    }
+  }
+
+  panic("There is no empty cell to find on this board...")
+}
