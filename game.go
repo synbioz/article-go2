@@ -47,6 +47,22 @@ func (g *Game) PossibleMoves(pieceIndex uint8) []Move {
 }
 
 func (g *Game) PlayWith(pieceIndex uint8) (Move, bool) {
+  // Adapt the depth to the stash size
+  var depth int
+  if g.Stash.PieceCount() > 10 {
+    depth = 2
+  } else {
+    depth = 4
+  }
+
+  move, _, _ := g.playWith(pieceIndex, 0, depth)
+
+  game := move.ApplyTo(pieceIndex, *g)
+
+  return move, game.IsWinningAt(move.Pos)
+}
+
+func (g *Game) playWith(pieceIndex uint8, depth, maxDepth int) (best_move Move, win bool, opponentWin bool) {
   moves := g.PossibleMoves(pieceIndex)
 
   // If there is a wining move, play it
@@ -54,25 +70,35 @@ func (g *Game) PlayWith(pieceIndex uint8) (Move, bool) {
     game := move.ApplyTo(pieceIndex, *g)
 
     if game.IsWinningAt(move.Pos) {
-      return move, true
+      return move, true, false
     }
   }
 
-  // Finding the better between one is easy...
-  if len(moves) == 1 { return moves[0], false }
+  // If there is only one move to play, tie
+  // If the maximum depth is reached, unknown result
+  if len(moves) == 1 || depth >= maxDepth {
+    return moves[0], false, false
+  }
 
-MyMoves:
+  // Find a move that will not give the victory to the opponent
+  best_move_found := false
   for _, move := range moves {
     game := move.ApplyTo(pieceIndex, *g)
+    _, opponentWin, win := game.playWith(move.Idx, depth + 1, maxDepth)
 
-    opponentMoves := game.PossibleMoves(move.Idx)
-    for _, opponentMove := range opponentMoves {
-      opponentGame := opponentMove.ApplyTo(move.Idx, game)
-      if opponentGame.IsWinningAt(opponentMove.Pos) { continue MyMoves }
+    if win {
+      return move, true, false
     }
 
-    return move, false
+    if !opponentWin {
+      best_move = move
+      best_move_found = true
+    }
   }
 
-  return moves[0], false
+  if best_move_found {
+    return best_move, false, false
+  }
+
+  return moves[0], false, true
 }
